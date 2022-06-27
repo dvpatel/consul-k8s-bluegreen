@@ -1859,6 +1859,12 @@ connectInject:
     # Note: This value has no effect if transparent proxy is disabled on the pod.
     defaultOverwriteProbes: true
 
+  # Configures consul-cni pluging for Consul Service mesh services
+  # Using this feature requires Consul 1.13.0-beta+
+  cni:
+    # If true, then all traffic redirection setup with use the consul-cni plugin
+    enabled: false
+
   # Configures metrics for Consul Connect services. All values are overridable
   # via annotations on a per-pod basis.
   metrics:
