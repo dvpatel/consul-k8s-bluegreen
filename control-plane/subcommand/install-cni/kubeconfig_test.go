@@ -14,14 +14,14 @@ func TestWriteKubeConfig(t *testing.T) {
 		name                 string
 		server               string
 		token                string
-		certificateAuthority string
+		certificateAuthority []byte
 		goldenFile           string // golden file that our output should look like
 	}{
 		{
 			name:                 "valid kubeconfig file",
 			server:               "https://[172.30.0.1]:443",
 			token:                "eyJhbGciOiJSUzI1NiIsImtp",
-			certificateAuthority: "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0",
+			certificateAuthority: []byte("LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0"),
 			goldenFile:           "ZZZ-consul-cni-kubeconfig.golden",
 		},
 	}

@@ -109,7 +109,7 @@ func kubernetesServer() (string, error) {
 	}
 
 	// Server string format is https://[127.0.0.1]:443. The [] are what other plugins are using in their kubeconfig.
-	server := fmt.Sprintf("%s://%s:%s", protocol, host, port)
+	server := fmt.Sprintf("%s://[%s]:%s", protocol, host, port)
 	return server, nil
 }
 

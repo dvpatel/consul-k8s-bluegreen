@@ -496,7 +496,7 @@ func (c *Command) Run(args []string) int {
 			K8SNSMirroringPrefix:          c.flagK8SNSMirroringPrefix,
 			CrossNamespaceACLPolicy:       c.flagCrossNamespaceACLPolicy,
 			EnableTransparentProxy:        c.flagDefaultEnableTransparentProxy,
-		        EnableCNI:                  c.flagEnableCNI,
+			EnableCNI:                     c.flagEnableCNI,
 			TProxyOverwriteProbes:         c.flagTransparentProxyDefaultOverwriteProbes,
 			EnableConsulDNS:               c.flagEnableConsulDNS,
 			ResourcePrefix:                c.flagResourcePrefix,

@@ -22,7 +22,6 @@ import (
 )
 
 const (
-	keyCNIStatus     = "consul.hashicorp.com/cni-status"
 	keyInjectStatus  = "consul.hashicorp.com/connect-inject-status"
 	keyConnectInject = "consul.hashicorp.com/connect-inject"
 	injected         = "injected"

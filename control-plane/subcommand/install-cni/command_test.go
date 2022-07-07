@@ -55,9 +55,10 @@ func TestCreateCNIConfigFile(t *testing.T) {
 		Type:       pluginType,
 		CNIBinDir:  defaultCNIBinDir,
 		CNINetDir:  defaultCNINetDir,
-		Multus:     defaultMultus,
+		DNSPrefix:  "",
 		Kubeconfig: defaultKubeconfig,
 		LogLevel:   defaultLogLevel,
+		Multus:     defaultMultus,
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {

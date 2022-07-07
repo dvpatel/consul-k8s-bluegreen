@@ -115,7 +115,7 @@ func (c *Command) Run(args []string) int {
 		Type:       pluginType,
 		CNIBinDir:  c.flagCNIBinDir,
 		CNINetDir:  c.flagCNINetDir,
-                DNSPrefix: c.flagDNSPrefix,
+		DNSPrefix:  c.flagDNSPrefix,
 		Kubeconfig: c.flagKubeconfig,
 		LogLevel:   c.flagLogLevel,
 		Multus:     c.flagMultus,
