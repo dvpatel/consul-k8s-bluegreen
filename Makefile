@@ -15,17 +15,18 @@ bats-tests: ## Run Helm chart bats tests.
 # ===========> Control Plane Targets
 
 control-plane-dev: ## Build consul-k8s-control-plane binary.
-	@$(SHELL) $(CURDIR)/control-plane/build-support/scripts/build-local.sh -o $(GOOS) -a $(GOARCH)
+	@$(SHELL) $(CURDIR)/control-plane/build-support/scripts/build-local.sh -o linux -a amd64
 
 control-plane-dev-docker: ## Build consul-k8s-control-plane dev Docker image.
-	@$(SHELL) $(CURDIR)/control-plane/build-support/scripts/build-local.sh -o linux -a $(GOARCH)
-	docker build -t '$(DEV_IMAGE)' \
-       --target=dev \
-       --build-arg 'ARCH=$(GOARCH)' \
-       --build-arg 'GIT_COMMIT=$(GIT_COMMIT)' \
-       --build-arg 'GIT_DIRTY=$(GIT_DIRTY)' \
-       --build-arg 'GIT_DESCRIBE=$(GIT_DESCRIBE)' \
-       -f $(CURDIR)/control-plane/Dockerfile $(CURDIR)/control-plane
+	@$(SHELL) $(CURDIR)/control-plane/build-support/scripts/build-local.sh -o linux -a "arm64 amd64"
+	docker buildx build --platform linux/arm64,linux/amd64 \
+	--tag '$(DOCKER_HUB_USER)/$(DEV_IMAGE):latest' \
+        --push \
+        --target=dev \
+        --build-arg 'GIT_COMMIT=$(GIT_COMMIT)' \
+        --build-arg 'GIT_DIRTY=$(GIT_DIRTY)' \
+        --build-arg 'GIT_DESCRIBE=$(GIT_DESCRIBE)' \
+        -f $(CURDIR)/control-plane/Dockerfile $(CURDIR)/control-plane
 
 control-plane-test: ## Run go test for the control plane.
 	cd control-plane; go test ./...
@@ -110,6 +111,7 @@ SHELL = bash
 GOOS?=$(shell go env GOOS)
 GOARCH?=$(shell go env GOARCH)
 DEV_IMAGE?=consul-k8s-control-plane-dev
+DOCKER_HUB_USER=$(shell cat $(HOME)/.dockerhub)
 GIT_COMMIT?=$(shell git rev-parse --short HEAD)
 GIT_DIRTY?=$(shell test -n "`git status --porcelain`" && echo "+CHANGES" || true)
 GIT_DESCRIBE?=$(shell git describe --tags --always)

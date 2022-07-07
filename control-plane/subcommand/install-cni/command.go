@@ -9,6 +9,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/containernetworking/cni/libcni"
 	"github.com/hashicorp/consul-k8s/control-plane/cni/config"
@@ -26,7 +27,7 @@ const (
 	defaultCNINetDir = "/etc/cni/net.d"
 	defaultMultus    = false
 	// defaultKubeconfig is named ZZZ-.. as part of a convention that other CNI plugins use.
-	defaultKubeconfig      = "ZZZZ-consul-cni-kubeconfig"
+	defaultKubeconfig      = "ZZZ-consul-cni-kubeconfig"
 	defaultLogLevel        = "info"
 	defaultCNIBinSourceDir = "/bin"
 	consulCNIBinName       = "consul-cni"
@@ -53,16 +54,19 @@ type Command struct {
 	flagCNIBinDir string
 	// flagCNINetDir is the location on the host of cni configuration
 	flagCNINetDir string
-	// flagMultus is a boolean flag for multus support.
-	flagMultus bool
-	// flageKubeconfig is the filename of the generated kubeconfig that the plugin will use to communicate with the kubernetes api
-	flagKubeconfig string
 	// flagCNIBinSourceDir is the location of consul-cni binary inside the installer container (/bin)
 	flagCNIBinSourceDir string
+	// flagDNSPrefix is used to determine the Consul Server DNS IP. The IP is set as an environment variable and the prefix allows us
+	// to search for it
+	flagDNSPrefix string
+	// flageKubeconfig is the filename of the generated kubeconfig that the plugin will use to communicate with the kubernetes api
+	flagKubeconfig string
 	// flagLogLevel is the logging level
 	flagLogLevel string
 	// flagLogJson is a boolean flag for json logging  format
 	flagLogJSON bool
+	// flagMultus is a boolean flag for multus support.
+	flagMultus bool
 
 	flagSet *flag.FlagSet
 
@@ -74,28 +78,15 @@ type Command struct {
 func (c *Command) init() {
 	c.flagSet = flag.NewFlagSet("", flag.ContinueOnError)
 	c.flagSet.StringVar(&c.flagCNIBinDir, "cni-bin-dir", defaultCNIBinDir, "Location of CNI plugin binaries.")
-	c.flagSet.StringVar(
-		&c.flagCNINetDir,
-		"cni-net-dir",
-		defaultCNINetDir,
-		"Location to write the CNI plugin configuration.",
-	)
-	c.flagSet.StringVar(
-		&c.flagCNIBinSourceDir,
-		"bin-source-dir",
-		defaultCNIBinSourceDir,
-		"Host location to copy the binary from",
-	)
+	c.flagSet.StringVar(&c.flagCNINetDir, "cni-net-dir", defaultCNINetDir, "Location to write the CNI plugin configuration.")
+	c.flagSet.StringVar(&c.flagCNIBinSourceDir, "bin-source-dir", defaultCNIBinSourceDir, "Host location to copy the binary from")
+	c.flagSet.StringVar(&c.flagDNSPrefix, "dns-prefix", "", "Prefix of the environment variables used to determine the Consul Server DNS IP")
 	c.flagSet.StringVar(&c.flagKubeconfig, "kubeconfig", defaultKubeconfig, "Name of the kubernetes config file")
-	c.flagSet.BoolVar(&c.flagMultus, "multus", false, "If the plugin is a multus plugin (default = false)")
-	c.flagSet.StringVar(
-		&c.flagLogLevel,
-		"log-level",
-		"debug",
+	c.flagSet.StringVar(&c.flagLogLevel, "log-level", "debug",
 		"Log verbosity level. Supported values (in order of detail) are \"trace\", "+
-			"\"debug\", \"info\", \"warn\", and \"error\".",
-	)
+			"\"debug\", \"info\", \"warn\", and \"error\".")
 	c.flagSet.BoolVar(&c.flagLogJSON, "log-json", false, "Enable or disable JSON output format for logging.")
+	c.flagSet.BoolVar(&c.flagMultus, "multus", false, "If the plugin is a multus plugin (default = false)")
 
 	c.help = flags.Usage(help, c.flagSet)
 }
@@ -124,9 +115,10 @@ func (c *Command) Run(args []string) int {
 		Type:       pluginType,
 		CNIBinDir:  c.flagCNIBinDir,
 		CNINetDir:  c.flagCNINetDir,
-		Multus:     c.flagMultus,
+                DNSPrefix: c.flagDNSPrefix,
 		Kubeconfig: c.flagKubeconfig,
 		LogLevel:   c.flagLogLevel,
+		Multus:     c.flagMultus,
 	}
 
 	// TODO: Validate config, especially log level
@@ -187,6 +179,8 @@ func (c *Command) Run(args []string) int {
 	}
 
 	// TODO: Do not exit, should run in loop with file watcher
+	c.logger.Info("All done setting up, sleeping...")
+	time.Sleep(3600 * time.Second)
 	return 0
 }
 

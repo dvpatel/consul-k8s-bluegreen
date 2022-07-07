@@ -1,7 +1,6 @@
 package installcni
 
 import (
-	"encoding/base64"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -37,17 +36,12 @@ func createKubeConfig(mountedPath, kubeconfigFile string, logger hclog.Logger) e
 		return err
 	}
 
-	ca, err := certificatAuthority(restCfg.CAData)
-	if err != nil {
-		return err
-	}
-
 	token, err := serviceAccountToken()
 	if err != nil {
 		return err
 	}
 
-	data, err := kubeConfigYaml(server, token, ca)
+	data, err := kubeConfigYaml(server, token, restCfg.CAData)
 	if err != nil {
 		return err
 	}
@@ -64,15 +58,15 @@ func createKubeConfig(mountedPath, kubeconfigFile string, logger hclog.Logger) e
 }
 
 // kubeConfigYaml creates the kubeconfig in yaml format using kubectl packages.
-func kubeConfigYaml(server, token, certificateAuthority string) ([]byte, error) {
+func kubeConfigYaml(server, token string, certificateAuthorityData []byte) ([]byte, error) {
 	// Use the same struct that kubectl uses to create the kubeconfig file
 	kubeconfig := clientcmdapi.Config{
 		APIVersion: "v1",
 		Kind:       "Config",
 		Clusters: map[string]*clientcmdapi.Cluster{
 			"local": {
-				Server:               server,
-				CertificateAuthority: certificateAuthority,
+				Server:                   server,
+				CertificateAuthorityData: certificateAuthorityData,
 			},
 		},
 		AuthInfos: map[string]*clientcmdapi.AuthInfo{
@@ -101,7 +95,7 @@ func kubeConfigYaml(server, token, certificateAuthority string) ([]byte, error) 
 func kubernetesServer() (string, error) {
 	protocol, ok := os.LookupEnv("KUBERNETES_SERVICE_PROTOCOL")
 	if !ok {
-		return "", fmt.Errorf("Unable to get kubernetes api server protocol from environment")
+		protocol = "https"
 	}
 
 	host, ok := os.LookupEnv("KUBERNETES_SERVICE_HOST")
@@ -115,16 +109,8 @@ func kubernetesServer() (string, error) {
 	}
 
 	// Server string format is https://[127.0.0.1]:443. The [] are what other plugins are using in their kubeconfig.
-	server := fmt.Sprintf("%s//[%s]:%s", protocol, host, port)
+	server := fmt.Sprintf("%s://%s:%s", protocol, host, port)
 	return server, nil
-}
-
-// certificatAuthority gets the certificate authority from the caData.
-func certificatAuthority(caData []byte) (string, error) {
-	if len(caData) == 0 {
-		return "", fmt.Errorf("Empty certificate authority returned from kubernetes rest api")
-	}
-	return base64.StdEncoding.EncodeToString(caData), nil
 }
 
 // serviceAccountToken gets the service token from a directory on the host.

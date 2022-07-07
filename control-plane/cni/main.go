@@ -22,9 +22,10 @@ import (
 )
 
 const (
-	keyCNIStatus    = "consul.hashicorp.com/cni-status"
-	keyInjectStatus = "consul.hashicorp.com/connect-inject-status"
-	injected        = "injected"
+	keyCNIStatus     = "consul.hashicorp.com/cni-status"
+	keyInjectStatus  = "consul.hashicorp.com/connect-inject-status"
+	keyConnectInject = "consul.hashicorp.com/connect-inject"
+	injected         = "injected"
 )
 
 type CNIArgs struct {
@@ -146,17 +147,19 @@ func cmdAdd(args *skel.CmdArgs) error {
 	// TODO: Add tests for all of the logic below
 	// TODO: Remove has hasBeenInjected and instead look for consul.hashicorp.com/cni-proxy-config annotation
 	// TODO: Add wait and timeout for annotations to show up
-	if hasBeenInjected(*pod) {
+	// Skip injecting pod that has consul.hashicorp.com/connect-inject: false
+	if hasBeenInjected(*pod) && !skipConnectInject(*pod) {
 		// If everything is good, add an annotation to the pod
 		// TODO: Remove this as it is just a stub to prove that we can do kubernetes things with the plugin
-		annotations := map[string]string{
-			keyCNIStatus: "true",
-		}
-		pod.SetAnnotations(annotations)
-		_, err = client.CoreV1().Pods(podNamespace).Update(context.TODO(), pod, metav1.UpdateOptions{})
-		if err != nil {
-			return err
-		}
+		// annotations := map[string]string{
+		// 	keyCNIStatus: "true",
+		// }
+		// pod.SetAnnotations(annotations)
+		// _, err = client.CoreV1().Pods(podNamespace).Update(context.TODO(), pod, metav1.UpdateOptions{})
+		// if err != nil {
+		// 	return err
+		// }
+		logger.Debug("pod has been injected")
 	} else {
 		logger.Debug("skipping traffic redirect on un-injected pod")
 	}
@@ -184,6 +187,13 @@ func main() {
 
 func hasBeenInjected(pod corev1.Pod) bool {
 	if anno, ok := pod.Annotations[keyInjectStatus]; ok && anno == injected {
+		return true
+	}
+	return false
+}
+
+func skipConnectInject(pod corev1.Pod) bool {
+	if anno, ok := pod.Annotations[keyConnectInject]; ok && anno == "false" {
 		return true
 	}
 	return false
