@@ -999,6 +999,10 @@ workflows:
           context: consul-ci
           requires:
             - dev-upload-docker
+      - acceptance-aks-1-21:
+          context: consul-ci
+          requires:
+            - dev-upload-docker
   nightly-acceptance-tests:
     triggers:
       - schedule:
